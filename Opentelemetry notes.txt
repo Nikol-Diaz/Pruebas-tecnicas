@@ -1,0 +1,251 @@
+
+OpenTelemetry
+
+OpenTelemetry is an observability tool that helps you understand what is happening inside your code.
+It can generate, collect, and export telemetry data such as traces, metrics, logs, and baggage.
+
+- Traces: shows what happens when a request is made to an application, for example, when a user visits a webpage or calls an API.
+
+- Tracer Provider: This is like a factory that creates tracers.
+- Tracer : A tracer creates spans, which contain detailed information about specific operations in your code (like a database query or an HTTP request).
+- Span: A span represents a single unit of work. It looks like structured data (json) that shows how long an operation took and what happened during it.
+
+- Context and Propagation: To connect related spans (for example, a client request and the server handling it), OpenTelemetry uses context propagation.
+- The context: object carries information about the current trace, like which service sent the request and which one received it.
+- Propagation: means passing this context between services or processes so that OpenTelemetry can correlate all the spans into a single trace.
+
+By default, propagation uses HTTP headers defined by the W3C Trace Context standard, which ensures all services can share tracing information correctly.
+
+
+
+Span: is a single unit of work that OpenTelemetry tracks like a small piece of a bigger process.
+It looks like structured data and contains information such as:
+	- Name of the span – describes what the span represents (for example, “database query” or “API call”).
+	- Parent Span ID** – shows which span started this one (it’s empty if it’s the root span).
+        - Start and end timestamps record when the operation began and ended.
+	- Span Context: it is like an ID card for your span.It contains information that helps OpenTelemetry connect all spans together into one complete trace.A span context includes:
+		- Trace ID: the ID of the entire trace (the group of all related spans).
+		- Span ID: the unique ID of this specific span.
+		- Trace Flags: A small binary value (on/off signal) that shows whether this trace should be recorded or ignored. This helps control how much data OpenTelemetry collects, so your system doesn’t get overloaded.
+       		- Trace State: optional extra information used by vendors (like Google Cloud, AWS, etc.).It’s a list of key–value pairs that can store custom or vendor-specific data.
+
+
+		 -Attributes are key–value pairs that add extra details to a span.
+They contain metadata about the operation the span is tracking in other words, they describe what is happening during that operation.
+
+- You can add attributes:
+-  When creating the span: this is the best option because OpenTelemetry (Otel) can use the information for sampling (deciding which data to record).
+- After creating the span: if new information appears later, you can still update the span with it.
+
+- Rules for Attributes
+
+* The key must be a non-null string.
+* The value must be a non-null:
+
+  * string
+  * number
+  * boolean
+  * or an array of these types
+
+---
+
+
+Semantic attributes are standardized attribute names defined by OpenTelemetry.
+They make sure everyone uses the same names for common kinds of data that appear in traces — like HTTP requests, database calls, or messaging systems.
+
+Using these standard names makes telemetry data consistent, easier to understand, and comparable across different systems and tools.
+
+For example:
+
+* `http.method = "GET"`
+* `db.system = "mysql"`
+* `messaging.system = "kafka"`
+
+
+-  span events:  It is a smallo log message tha happens at one specific momento in time during a span
+It helps you mark an important poitn inside a longer operationn
+
+--- span vs span events
+span tracks something that has a start and a an end like loading a web page
+- span events marks a single momento inside that span like the page become interactive
+So, spans shoow the whole process, while a span evento higlights key moments within it
+Example:
+ - span could be ' load homepage'
+ - span events could be:
+		- HTML loaded
+		- Images loaded
+		- Page interactive
+each evento has its own time stamp showing exacty when it happened
+
+
+when uses span events or just span attributes
+use span events when you want to mark a specific momment in time because it show exactly ehrn something happened
+if you just wnat to add extra information not time base use span attribute it adds context but exact time isnot important
+
+
+span links let you connect one span to another showing taht they are related or that one caused the other
+links are optional but they are  useful when you want to show relationships between independent or asynchronous operations
+
+span status
+Each span has a status>the three posible values are;
+	Unset, error or ok
+The default value is unset a span status that is unset means that the operatio is tracked successfully completed withou an error
+	error means some error ocurred in the operation it tracks when a span is ok then that means the span was explicity marked as error-free by the developerd of the aplication
+
+Here’s a simple and clear explanation of **Span Status** 👇
+
+---
+
+ Span Status: Every **span** has a **status** that shows how the operation went.
+There are **three possible values**:
+
+1. **Unset**
+2. **Error**
+3. **Ok**
+
+---
+
+- What Each One Means
+
+- Unset (default):
+  This means the operation **finished successfully** and **no errors** happened.
+  It’s the **default** value, so if nothing went wrong, the span stays as “Unset.”
+
+* **Error** →
+  This means **something went wrong** during the operation.
+  Example: if your server returns an **HTTP 500 error**, the span status should be “Error.”
+
+* **Ok** →
+  This means the **developer explicitly marked** the span as **successful**.
+  It’s like saying, “I’m 100% sure this was successful.”
+  You don’t always need to set this — because “Unset” already means there was no error —
+  but “Ok” makes it **extra clear** that the operation was successful on purpose.
+- Span Kind
+
+Every **span** in OpenTelemetry has a **kind**, which describes **what role** it plays in a system.
+There are **five kinds** of spans:
+
+1. **Client**
+2. **Server**
+3. **Internal**
+4. **Producer**
+5. **Consumer**
+
+This helps OpenTelemetry understand **how spans are connected** — who is calling who, or where data is going and coming from.
+If you don’t specify the kind, it’s assumed to be **Internal** by default.
+
+---
+
+### ⚙️ The Five Span Kinds
+
+#### 🧑‍💻 Client
+
+A **Client span** represents an **outgoing request** from your app to another service.
+Examples:
+
+* Sending an **HTTP request** to another API.
+* Making a **database query**.
+
+It shows the “caller” side of a request.
+
+---
+
+#### 🖥️ Server
+
+A **Server span** represents an **incoming request** that your service receives.
+Examples:
+
+* Your API **receives** an HTTP request from a client.
+* A **remote procedure call (RPC)** comes into your system.
+
+It shows the “receiver” side of a request.
+
+🧩 Usually, a **Client span** calls a **Server span** on the other end.
+
+---
+
+#### ⚙️ Internal
+
+An **Internal span** represents work that happens **inside** your application — not between different systems or services.
+Examples:
+
+* Running a function inside your code.
+* Processing data within the same app.
+
+It stays completely inside your process.
+
+---
+
+#### 🏭 Producer
+
+A **Producer span** represents creating or sending a **job or message** that will be processed later (asynchronously).
+Examples:
+
+* Publishing a message to a **queue** (like Kafka or RabbitMQ).
+* Sending a background task to be handled later.
+
+The **Consumer span** (below) will eventually process what the Producer created.
+
+---
+
+#### 📬 Consumer
+
+A **Consumer span** represents **receiving or processing** a job or message created by a Producer.
+Examples:
+
+* A background worker processing a message from a queue.
+* An event listener handling an event that was sent earlier.
+
+A **Consumer** span may start **long after** the **Producer** span has finished.
+
+---
+
+### 🧠 Summary Table
+
+| Span Kind    | Direction           | Example                     |
+| ------------ | ------------------- | --------------------------- |
+| **Client**   | Sends a request     | App making an HTTP call     |
+| **Server**   | Receives a request  | API receiving the HTTP call |
+| **Internal** | Inside one app      | Function or middleware call |
+| **Producer** | Creates async job   | Sends message to queue      |
+| **Consumer** | Processes async job | Worker reads from queue     |
+
+---
+
+In short:
+👉 **Client ↔ Server** describe synchronous (immediate) communication.
+👉 **Producer ↔ Consumer** describe asynchronous (delayed) communication.
+👉 **Internal** happens inside one process.
+
+
+
+-------------------------------------------------------------------------------------------------
+'''NOTAS
+proyecto base que construyo ricardo para agentes
+
+git clone -b ai_project_base --single-branch https://BancoContinental@dev.azure.com/BancoContinental/Inteligencia%20Artificial/_git/python-agents-project-base
+
+
+una tarea por dia
+
+
+SecretKey - Desarrollo
+sk-lf-c129a8e6-cc28-4d82-bd80-5a92f136b15d
+PublicKey - Desarrollo
+pk-lf-9798b2c1-13c9-47ff-b9e6-4d1c3b0ab0fa
+https://sdp-appgate.bancontinental.com.py:444/
+-----------------------------------------------------------------
+
+
+para la implementacion
+
+
+add packets
+dotnet add package OpenTelemetry.Exporter.Console
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+dotnet add package OpenTelemetry.Instrumentation.Http
+
+
+pip install opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-asgi  opentelemetry-instrumentation-requests  opentelemetry-instrumentation-sqlalchemy   opentelemetry-exporter-jaeger opentelemetry-exporter-otlp
+
+
