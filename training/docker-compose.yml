@@ -1,0 +1,28 @@
+services:
+  small:
+    build: .
+    command: python small/train.py
+    volumes:
+      - ./small:/app/small
+      - ./test.csv:/app/test.csv
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  big:
+    build: .
+    command: python big/train.py
+    volumes:
+      - ./big:/app/big
+      - ./test.csv:/app/test.csv
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
